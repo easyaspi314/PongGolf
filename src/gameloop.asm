@@ -2,54 +2,39 @@
         ;;
         ;; This is our game loop.
         ;;
-        ;; It is called every ~18.5ms by int 0x1C.
+        ;; It is called every 30th of a second by int 0x1C.
         ;;
 game_update:
         ; Disable interrupts
         cli
         ; Save all registers
-        pusha
-%ifndef NO_DEFLICKER
-        ; DOSBox hack: We need to VSync to avoid flickering. Unfortunately, this
-        ; doesn't work with VirtualBox, it simply flips the bit each time.
-        ;
-        ; This is left out in the golfed code, as it wastes 13 bytes, but
-        ; it is enabled by default for normal builds.
-        ; Wait for vsync
-        mov     dx, 0x3DA
-.spin1:
-        in      al, dx
-        test    al, 0x8
-        jnz     .spin1
-.spin2:
-        in      al, dx
-        test    al, 0x8
-        jz      .spin2
-%endif
-        ; Find our home segment. Since we are using a flat .com file,
-        ; our code segment is the same as the data segment.
-        push    ds
-        push    cs
-        pop     ds
-
+        pusha   
         ;;
         ;; Read input buffer
         ;;
 
         ; Load our input buffer into SI
         mov     si, input_buffer
-        ; Load Player 1's position
         xor     ax, ax
+        cwd
+        cmp     byte[si + KEY_ESC], dl
+        jz      .not_exit
+.exit:
+        inc     byte[exit_test]
+       ; sti
+       ; iret
+.not_exit:
+        ; Load Player 1's position
         mov     al, [si + (player1_pos - input_buffer)]
 
         ; Q: move P1 paddle up
-        cmp     byte[si + KEY_Q], 0
+        cmp     byte[si + KEY_Q], dl
         jz     .not_p1_up
 .p1_up:
         call    move_paddle_up
 .not_p1_up:
         ; A: move P1 paddle down
-        cmp     byte[si + KEY_A], 0
+        cmp     byte[si + KEY_A], dl
         jz      .not_p1_down
 .p1_down:
         call    move_paddle_down
@@ -61,13 +46,13 @@ game_update:
         ; Load Player 2's position
         mov     al, [si + (player2_pos - input_buffer)]
         ; P: move P2 paddle up
-        cmp     byte[si + KEY_P], 0
+        cmp     byte[si + KEY_P], dl
         jz      .not_p2_up
 .p2_up:
         call    move_paddle_up
 .not_p2_up:
         ; L: move P2 paddle down
-        cmp     byte[si + KEY_L], 0
+        cmp     byte[si + KEY_L], dl
         jz      .not_p2_down
 .p2_down:
         call    move_paddle_down
@@ -77,10 +62,14 @@ game_update:
         ; Push for later
         push    ax
         ;;
-        ;; Clear paddles
-        ;; TODO: fix flicker on DOSBox
+        ;; Clear screen
         ;;
-        
+%ifdef DOUBLE_BUFFER
+        mov     cx, 64000/2
+        mov     di, double_buffer
+        xor     ax, ax
+        rep     stosw
+%endif
         ; ax = dx = di = 0
         xor     di, di
         mul     di
@@ -100,11 +89,20 @@ game_update:
         call    draw_rect
 
         ; dx = 0 (P1_PADDLE_X)
-        cdq
+        cwd
         pop     di
         call    draw_rect
-        ; Restore data segment
-        pop     ds
+%ifdef DOUBLE_BUFFER
+        mov     si, double_buffer
+        push    es
+        push    0xA000
+        pop     es
+        mov     cx, SCREEN_ROWS * SCREEN_COLS / 2
+        xor     di, di
+        rep     movsw
+        pop     es
+        mov     ax, si
+%endif
         ; Restore registers
         popa
         ; Enable interrupts

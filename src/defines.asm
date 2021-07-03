@@ -4,20 +4,26 @@ SCREEN_ROWS: equ 200
 ; Timer
 ; http://gamedev.net/forums/topic/17816-speeding-up-the-timer-in-dos/
 TIMER_60HZ: equ 0x4DAE
+TIMER_30HZ: equ 0x965C
 TIMER_DEFAULT: equ 0xFFFF
 TIMER_CONTROL: equ 0x43
 TIMER_COUNTER_0: equ 0x40
 TIMER_CONTROL_WORD: equ 0x3C
 
 ; BIOS scan codes
+KEY_ESC: equ 0x01
 KEY_Q: equ 0x10
 KEY_A: equ 0x1E
 KEY_P: equ 0x19
 KEY_L: equ 0x26
 
 PADDLE_WIDTH: equ 8
-PADDLE_HEIGHT: equ 50
+PADDLE_HEIGHT: equ 36
+%ifdef GOLF
+PADDLE_SPEED: equ 6
+%else
 PADDLE_SPEED: equ 4
+%endif
 P1_PADDLE_X: equ 0
 P2_PADDLE_X: equ SCREEN_COLS - PADDLE_WIDTH
 BALL_WIDTH: equ 4

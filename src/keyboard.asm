@@ -1,8 +1,8 @@
 	[bits 16]
         extern input_buffer
         global handle_int09
-        ; To have a proper experience, we need to have direct access to the keyboard.
-        ; Playing Pong with standard key repeat suuuuuucks
+        ; To have a proper experience, we need to have direct access to the
+        ; keyboard. Playing Pong with standard key repeat suuuuuucks.
 handle_int09:
         ; Disable interrupts
 	cli
@@ -11,14 +11,15 @@ handle_int09:
         mov     dl, 1
 	; Read keycode
 	in	al, 0x60
-        ; If the highest bit is set, then it is released. Otherwise it is pressed.
+        ; If the highest bit is set, then it is released. Otherwise it is
+        ; pressed.
         aam     0x80
         sub     dl, ah
         ; Zero extend AL (since we know the sign bit is clear)
         cbw
 	; Save to the buffer
         xchg    ax, bx
-        mov     [cs:input_buffer + bx], dl
+        mov     [input_buffer + bx], dl
         ; Claim that it was consumed
         in      al, 0x61
         or      al, 0x80
@@ -52,12 +53,15 @@ set_interrupts_and_timer:
         pop     dx
         mov     al, 0x1C
         int     0x21
+        ; Set the interval
+%ifndef GOLF
         mov     al, TIMER_CONTROL_WORD
         out     TIMER_CONTROL, al
         pop     ax
         out     TIMER_COUNTER_0, al
         mov     al, ah
         out     TIMER_COUNTER_0, al
+%endif
         mov     ds, di
         ; return
         jmp     si

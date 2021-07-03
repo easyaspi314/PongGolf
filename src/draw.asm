@@ -14,15 +14,20 @@
 draw_rect:
         ; Save registers
         pusha
-        ; Save copy of ES
-        push    es
-        ; Set ES to point to VRAM
-        push    0xA000
-        pop     es
         ; Multiply y by columns
         imul    di, SCREEN_COLS
         ; Add x to get the offset
         add     di, dx
+%ifdef DOUBLE_BUFFER
+        ; Add the offset to our double buffer
+        add     di, double_buffer
+%else
+        ; Set ES to point to VRAM
+        ; Save copy of ES
+        push    es
+        push    0xA000
+        pop     es
+%endif
 .loop1:
         ; Save DI and CX by pusha again :P
         pusha
@@ -36,7 +41,9 @@ draw_rect:
         dec     bx
         jnz     .loop1
         ; Restore registers like a good boy
+%ifndef DOUBLE_BUFFER
         pop     es
+%endif
         popa
         ; Return
         ret

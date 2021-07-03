@@ -20,21 +20,29 @@ ball_x:
 ball_y:
         resb    1
         global ball_direction
-ball_direction:
+ball_dx:
         resb    1
         global ball_speed
-ball_speed:
+ball_dy:
         resb    1
         global exit_test
 exit_test:
         resb    1
+%ifdef DOUBLE_BUFFER
+        global double_buffer
+double_buffer:
+        resb    320 * 200
+%endif
 
 BSS_SIZE: equ   $ - BSS_START
-
-        ; These don't need to be zeroed.
+        ; these are intentionally not zeroed
         global backup_interrupts
 backup_interrupts:
-old_int09:
-        resb    4
-old_int1C:
-        resb    4
+old_int09_ip:
+        resb    2
+old_int09_cs:
+        resb    2
+old_int1C_ip:
+        resb    2
+old_int1C_cs:
+        resb    2
